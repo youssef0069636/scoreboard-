@@ -22,6 +22,13 @@ const matchReducer = (state: MatchState, action: Action): MatchState => {
 
       if (action.payload.type === 'YELLOW_CARD') newStats.yellowCards++;
       if (action.payload.type === 'RED_CARD') newStats.redCards++;
+      
+      // Explicitly handle VAR events if needed, for now we just pass it through
+      // But we ensure description is part of the payload which is critical for the new VAR animation
+      if (action.payload.type === 'VAR') {
+         // Future: Track VAR interruptions count or time?
+      }
+
       // Note: Goals are handled in SET_SCORE usually, but we could track them here too if stats need to be specific
 
       return {
@@ -58,6 +65,8 @@ const matchReducer = (state: MatchState, action: Action): MatchState => {
         } else {
             return { ...state, awayStats: { ...state.awayStats, ...action.payload.stats } };
         }
+    case 'UPDATE_MATCH_CONFIG':
+      return { ...state, ...action.payload };
     case 'SYNC_STATE':
       return action.payload;
     default:

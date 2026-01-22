@@ -6,20 +6,38 @@ interface Props {
   match: MatchState;
 }
 
-const StatRow: React.FC<{ label: string; homeValue: number; awayValue: number; isPercent?: boolean }> = ({ label, homeValue, awayValue, isPercent }) => {
-    const total = homeValue + awayValue;
-    const homeWidth = total === 0 ? 50 : (homeValue / total) * 100;
-    const awayWidth = total === 0 ? 50 : (awayValue / total) * 100;
+const StatRow: React.FC<{ label: string; homeValue: number | string; awayValue: number | string; isPercent?: boolean; maxValue?: number }> = ({ label, homeValue, awayValue, isPercent, maxValue }) => {
+    const hVal = typeof homeValue === 'string' ? parseFloat(homeValue) : homeValue;
+    const aVal = typeof awayValue === 'string' ? parseFloat(awayValue) : awayValue;
+    
+    // Calculate visualization width
+    let total = hVal + aVal;
+    // If a manual max value is provided (e.g. for possession which is out of 100), use that, otherwise use total
+    const denominator = maxValue || (total === 0 ? 1 : total);
+    
+    // If not percent based (like possession), we calculate relative strength
+    let homeWidth = 50;
+    let awayWidth = 50;
+
+    if (maxValue) {
+        // Absolute values (like 50% vs 50% possession)
+        homeWidth = hVal;
+        awayWidth = aVal;
+    } else if (total > 0) {
+        // Relative comparison (e.g. 5 shots vs 10 shots)
+        homeWidth = (hVal / total) * 100;
+        awayWidth = (aVal / total) * 100;
+    }
 
     return (
-        <div className="flex items-center w-full max-w-4xl mx-auto mb-6">
+        <div className="flex items-center w-full max-w-4xl mx-auto mb-5">
             <div className="w-24 text-right text-3xl font-bold text-white pr-4 tabular-nums">
                 {homeValue}{isPercent ? '%' : ''}
             </div>
             
             <div className="flex-1 flex flex-col gap-1">
-                <div className="text-center text-cyan-400 font-bold uppercase tracking-widest text-sm mb-1">{label}</div>
-                <div className="h-4 flex rounded-full overflow-hidden bg-slate-800 shadow-inner border border-slate-700/50 relative">
+                <div className="text-center text-cyan-400 font-bold uppercase tracking-widest text-xs mb-0.5">{label}</div>
+                <div className="h-3 flex rounded-full overflow-hidden bg-slate-800 shadow-inner border border-slate-700/50 relative">
                      {/* Center Marker */}
                      <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-white/30 z-10" />
                      
@@ -61,39 +79,55 @@ export const StatsBoard: React.FC<Props> = ({ match }) => {
             <div className="absolute inset-0 bg-ucl-stars opacity-40 pointer-events-none" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/30 via-[#020922]/90 to-[#020922] pointer-events-none" />
 
-            <div className="relative z-10 w-full max-w-5xl bg-[#0e1e5b]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-12 shadow-2xl">
-                 {/* Header */}
-                 <div className="text-center mb-12">
-                     <h2 className="text-cyan-400 text-xl uppercase tracking-[0.5em] font-bold mb-2">Match Statistics</h2>
-                     <div className="flex items-center justify-center gap-12">
-                         <div className="flex flex-col items-center">
-                             <img src={homeTeam.logo} className="w-24 h-24 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
-                             <h1 className="text-4xl font-bold uppercase mt-4 text-white">{homeTeam.shortName}</h1>
+            <div className="relative z-10 w-full max-w-6xl bg-[#0e1e5b]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-10 shadow-2xl flex gap-12">
+                 
+                 {/* Match Header Info (Left) */}
+                 <div className="w-1/3 flex flex-col items-center justify-center border-r border-white/10 pr-12">
+                     <h2 className="text-cyan-400 text-xl uppercase tracking-[0.5em] font-bold mb-8">Match Statistics</h2>
+                     
+                     <div className="flex flex-col items-center gap-6 w-full">
+                         {/* Home */}
+                         <div className="flex items-center gap-4 w-full">
+                             <img src={homeTeam.logo} className="w-16 h-16 object-contain" />
+                             <h1 className="text-2xl font-bold uppercase text-white truncate">{homeTeam.shortName}</h1>
+                             <span className="text-4xl font-mono text-cyan-400 ml-auto">{match.homeScore}</span>
                          </div>
-                         <div className="flex flex-col items-center">
-                             <div className="text-6xl font-black text-white bg-clip-text bg-gradient-to-b from-white to-slate-400 text-transparent">
-                                 {match.homeScore} - {match.awayScore}
-                             </div>
-                             <div className="bg-white/10 px-4 py-1 rounded-full text-sm font-bold mt-2 uppercase text-cyan-200 border border-white/5">
-                                 {match.timer.period === 'FT' ? 'Full Time' : match.timer.period === 'HT' ? 'Half Time' : 'Live'}
-                             </div>
+
+                         <div className="w-full h-[1px] bg-white/10" />
+
+                         {/* Away */}
+                         <div className="flex items-center gap-4 w-full">
+                             <img src={awayTeam.logo} className="w-16 h-16 object-contain" />
+                             <h1 className="text-2xl font-bold uppercase text-white truncate">{awayTeam.shortName}</h1>
+                             <span className="text-4xl font-mono text-purple-400 ml-auto">{match.awayScore}</span>
                          </div>
-                         <div className="flex flex-col items-center">
-                             <img src={awayTeam.logo} className="w-24 h-24 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
-                             <h1 className="text-4xl font-bold uppercase mt-4 text-white">{awayTeam.shortName}</h1>
-                         </div>
+                     </div>
+
+                     <div className="bg-white/10 px-6 py-2 rounded-full text-lg font-bold mt-12 uppercase text-white border border-white/5 shadow-lg">
+                         {match.timer.period === 'FT' ? 'Full Time' : match.timer.period === 'HT' ? 'Half Time' : `${match.timer.minutes}' Played`}
                      </div>
                  </div>
 
-                 {/* Stats Grid */}
-                 <div className="flex flex-col gap-2">
-                     <StatRow label="Possession" homeValue={homeStats.possession} awayValue={awayStats.possession} isPercent />
-                     <StatRow label="Shots" homeValue={homeStats.shots} awayValue={awayStats.shots} />
-                     <StatRow label="On Target" homeValue={homeStats.shotsOnTarget} awayValue={awayStats.shotsOnTarget} />
-                     <StatRow label="Corners" homeValue={homeStats.corners} awayValue={awayStats.corners} />
-                     <StatRow label="Fouls" homeValue={homeStats.fouls} awayValue={awayStats.fouls} />
-                     <StatRow label="Yellow Cards" homeValue={homeStats.yellowCards} awayValue={awayStats.yellowCards} />
-                     <StatRow label="Red Cards" homeValue={homeStats.redCards} awayValue={awayStats.redCards} />
+                 {/* Stats Grid (Right) */}
+                 <div className="w-2/3 flex flex-col justify-center">
+                     <StatRow label="Possession" homeValue={homeStats.possession} awayValue={awayStats.possession} isPercent maxValue={100} />
+                     <StatRow label="Expected Goals (xG)" homeValue={homeStats.xg.toFixed(2)} awayValue={awayStats.xg.toFixed(2)} />
+                     <div className="grid grid-cols-2 gap-x-8">
+                         <StatRow label="Shots" homeValue={homeStats.shots} awayValue={awayStats.shots} />
+                         <StatRow label="On Target" homeValue={homeStats.shotsOnTarget} awayValue={awayStats.shotsOnTarget} />
+                     </div>
+                     <div className="grid grid-cols-2 gap-x-8">
+                        <StatRow label="Passes" homeValue={homeStats.passes} awayValue={awayStats.passes} />
+                        <StatRow label="Corners" homeValue={homeStats.corners} awayValue={awayStats.corners} />
+                     </div>
+                     <div className="grid grid-cols-2 gap-x-8">
+                        <StatRow label="Fouls" homeValue={homeStats.fouls} awayValue={awayStats.fouls} />
+                        <StatRow label="Offsides" homeValue={homeStats.offsides} awayValue={awayStats.offsides} />
+                     </div>
+                     <div className="grid grid-cols-2 gap-x-8">
+                        <StatRow label="Yellow Cards" homeValue={homeStats.yellowCards} awayValue={awayStats.yellowCards} />
+                        <StatRow label="Saves" homeValue={homeStats.saves} awayValue={awayStats.saves} />
+                     </div>
                  </div>
             </div>
         </motion.div>

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { MatchState, EventType, Team, MatchEvent } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Monitor } from 'lucide-react';
+import { Monitor, Aperture } from 'lucide-react';
 
 interface Props {
   match: MatchState;
@@ -231,36 +231,98 @@ const UclStrap: React.FC<{ title: string; subtitle: string; colorClass: string; 
     </motion.div>
 );
 
-// 5. VAR ANIMATION (Neon Box)
-const UclVar: React.FC = () => (
-    <motion.div
-        initial={{ scaleY: 0 }}
-        animate={{ scaleY: 1 }}
-        exit={{ scaleY: 0 }}
-        className="w-[600px] h-[300px] bg-black/90 border-[3px] border-cyan-500 rounded-lg relative flex flex-col items-center justify-center shadow-[0_0_50px_rgba(6,182,212,0.6)] font-ucl overflow-hidden mx-auto"
-    >
-        {/* Shutter / Scan effect */}
-        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(6,182,212,0.1)_50%)] bg-[length:10px_10px]" />
-        
-        <motion.div 
-           animate={{ opacity: [0.5, 1, 0.5] }}
-           transition={{ duration: 0.2, repeat: Infinity }}
-           className="border-[2px] border-cyan-400/50 absolute top-4 bottom-4 left-4 right-4 rounded"
-        />
-        
-        {/* Corners */}
-        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-cyan-500" />
-        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-cyan-500" />
-        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-cyan-500" />
-        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-cyan-500" />
+// 5. VAR ANIMATION (Advanced Neon Box)
+const UclVar: React.FC<{ event: MatchEvent }> = ({ event }) => {
+    // Determine content based on description
+    // Default is 'VAR CHECK'
+    // If description is provided (and not just 'CHECK'), use it.
+    const hasDecision = event.description && event.description !== 'CHECK' && event.description !== '';
+    const mainText = hasDecision ? event.description : 'VAR CHECK';
+    const subText = hasDecision ? 'OFFICIAL REVIEW DECISION' : 'POSSIBLE OFFSIDE / PENALTY';
+    
+    // Theme Colors based on decision type
+    let themeColor = 'text-cyan-400';
+    let borderColor = 'border-cyan-500';
+    let shadowColor = 'shadow-cyan-500/50';
 
-        <Monitor size={64} className="text-cyan-400 mb-4 animate-pulse" />
-        <h1 className="text-6xl font-black text-white italic tracking-tighter drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">VAR CHECK</h1>
-        <div className="bg-cyan-900/50 px-4 py-1 rounded text-cyan-300 uppercase tracking-widest mt-2 border border-cyan-500/30">
-            Reviewing Incident
-        </div>
-    </motion.div>
-);
+    if (hasDecision) {
+        if (['NO GOAL', 'OFFSIDE', 'RED CARD', 'MISSED'].some(s => event.description?.includes(s))) {
+            themeColor = 'text-red-500';
+            borderColor = 'border-red-500';
+            shadowColor = 'shadow-red-500/50';
+        } else if (['GOAL', 'PENALTY', 'AWARDED'].some(s => event.description?.includes(s))) {
+            themeColor = 'text-green-500';
+            borderColor = 'border-green-500';
+            shadowColor = 'shadow-green-500/50';
+        }
+    }
+
+    return (
+        <motion.div
+            initial={{ scaleY: 0 }}
+            animate={{ scaleY: 1 }}
+            exit={{ scaleY: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className={`w-[700px] h-[350px] bg-black/95 ${borderColor} border-[4px] rounded-lg relative flex flex-col items-center justify-center font-ucl overflow-hidden mx-auto shadow-[0_0_80px_rgba(0,0,0,0.8)] ${shadowColor} shadow-2xl`}
+        >
+            {/* Shutter Effect Layer - Animated on mount */}
+            <motion.div
+                initial={{ height: '100%' }}
+                animate={{ height: '0%' }}
+                transition={{ delay: 0.4, duration: 0.3, ease: "easeInOut" }}
+                className="absolute inset-0 bg-black z-30 flex items-center justify-center pointer-events-none"
+            >
+                <div className="w-full h-[2px] bg-white/50" />
+            </motion.div>
+
+            {/* Scanlines */}
+            <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(255,255,255,0.05)_50%)] bg-[length:4px_4px] pointer-events-none z-0" />
+            
+            {/* Inner pulsating border */}
+            <motion.div 
+               animate={{ opacity: [0.3, 0.7, 0.3] }}
+               transition={{ duration: 1.5, repeat: Infinity }}
+               className={`border-[2px] ${borderColor} opacity-50 absolute top-3 bottom-3 left-3 right-3 rounded pointer-events-none`}
+            />
+            
+            {/* Tech Corners */}
+            <div className={`absolute top-0 left-0 w-10 h-10 border-t-[6px] border-l-[6px] ${borderColor} z-10`} />
+            <div className={`absolute top-0 right-0 w-10 h-10 border-t-[6px] border-r-[6px] ${borderColor} z-10`} />
+            <div className={`absolute bottom-0 left-0 w-10 h-10 border-b-[6px] border-l-[6px] ${borderColor} z-10`} />
+            <div className={`absolute bottom-0 right-0 w-10 h-10 border-b-[6px] border-r-[6px] ${borderColor} z-10`} />
+
+            {/* Main Content */}
+            <motion.div 
+                key={mainText} // Re-animate when text changes
+                initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
+                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                transition={{ duration: 0.3, delay: 0.5 }} // Delay to wait for shutter
+                className="flex flex-col items-center z-20"
+            >
+                <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                    className="mb-4"
+                >
+                    <Aperture size={50} className={themeColor} />
+                </motion.div>
+                
+                <motion.h1 
+                    animate={{ textShadow: [`0 0 10px currentColor`, `0 0 20px currentColor`, `0 0 10px currentColor`] }}
+                    transition={{ duration: 0.1, repeat: Infinity, repeatDelay: Math.random() * 0.5 }}
+                    className={`text-7xl font-black italic tracking-tighter ${themeColor} uppercase text-center leading-none mb-2`}
+                >
+                    {mainText}
+                </motion.h1>
+                
+                <div className={`bg-white/10 px-6 py-1.5 rounded text-white tracking-[0.4em] font-bold text-sm uppercase border border-white/20 backdrop-blur-sm`}>
+                    {subText}
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 
 // --- MAIN CONTROLLER ---
 
@@ -308,7 +370,7 @@ export const LowerThird: React.FC<Props> = ({ match }) => {
           )}
 
           {/* VAR */}
-          {isVar && <UclVar />}
+          {isVar && <UclVar event={activeEvent} />}
 
           {/* Penalty */}
           {isPenalty && (

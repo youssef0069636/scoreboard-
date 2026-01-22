@@ -67,14 +67,21 @@ export interface TeamStats {
   fouls: number;
   yellowCards: number;
   redCards: number;
+  offsides: number; // New
+  saves: number;    // New
+  passes: number;   // New
+  xg: number;       // New (Expected Goals)
 }
 
 export interface OverlayState {
   showScoreboard: boolean;
   showLineups: boolean;
+  showFormation: boolean; // New
   showLowerThird: boolean;
-  showStats: boolean; // New: Full screen stats
-  showIntro: boolean; // New: Intro sequence
+  showStats: boolean; // Full screen stats
+  showIntro: boolean; // Intro sequence
+  showTicker: boolean; // New: Bottom stats ticker
+  showSponsor: boolean; // New: Sponsor area
   activeEvent: MatchEvent | null;
   customMessage: string | null;
 }
@@ -101,4 +108,5 @@ export type Action =
   | { type: 'SET_TEAMS'; payload: { home: Team; away: Team } }
   | { type: 'UPDATE_TEAM_CONFIG'; payload: { teamId: string; updates: Partial<Team> } }
   | { type: 'UPDATE_STATS'; payload: { teamId: string; stats: Partial<TeamStats> } }
-  | { type: 'SYNC_STATE'; payload: MatchState };
+  | { type: 'SYNC_STATE'; payload: MatchState }
+  | { type: 'UPDATE_MATCH_CONFIG'; payload: Partial<MatchState> };
